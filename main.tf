@@ -3,7 +3,7 @@ provider "aws" {
 }
 
 resource "aws_launch_configuration" "example" {
-  ami             = "ami-0fb653ca2d3203ac1"
+  image_id        = "ami-0fb653ca2d3203ac1"
   instance_type   = "t2.micro"
   security_groups = [aws_security_group.instance.id]
 
@@ -59,7 +59,7 @@ data "aws_subnets" "default" {
 }
 
 resource "aws_lb" "example" {
-  name                = "terraform-asg-example"
+  name                = var.alb_name
   load_balancer_type  = "application"
   subnets             = data.aws_subnets.default.ids
   security_groups     = [aws_security_group.alb.id]
@@ -83,10 +83,10 @@ resource "aws_lb_listener" "http" {
 }
 
 resource "aws_lb_target_group" "asg" {
-  name      = "terraform-asg-example"
+  name      = var.alb_name
   port      = var.server_port
   protocol  = "HTTP"
-  vpc_id    = data.aws_vpc.default
+  vpc_id    = data.aws_vpc.default.id
 
   health_check {
     path                = "/"
@@ -94,7 +94,7 @@ resource "aws_lb_target_group" "asg" {
     matcher             = "200"
     interval            = 15
     timeout             = 3
-    healty_threshold    = 2
+    healthy_threshold   = 2
     unhealthy_threshold = 2
   }
 }
@@ -141,6 +141,12 @@ variable "server_port" {
   description = "The port the server will use for HTTP requests"
   type        = number
   default     = 8080
+}
+
+variable "alb_name" {
+  description = "The name of the ALB"
+  type        = string
+  default     = "terraform-asg-example"
 }
 
 output "alb_dns_name" {
